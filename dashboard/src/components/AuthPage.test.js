@@ -1,0 +1,24 @@
+import React from 'react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import AuthPage from './AuthPage';
+import { api } from '../api';
+jest.mock('../api', () => ({ api: { post: jest.fn() }, apiError: () => 'Unable to sign in' }));
+beforeEach(() => jest.clearAllMocks());
+test('login preserves credentials and exposes an actionable error without leaving the form', async () => {
+  api.post.mockRejectedValue(new Error('network'));
+  const done = jest.fn();
+  render(<AuthPage onAuthenticated={done} />);
+  expect(screen.getByLabelText('Email')).toHaveAttribute('autocomplete', 'username');
+  expect(screen.getByLabelText('Password')).toHaveAttribute('autocomplete', 'current-password');
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'demo@example.test' } });
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'not-a-real-password' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Unable to sign in');
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Log in' })).toBeEnabled());
+  expect(done).not.toHaveBeenCalled();
+  expect(screen.getByLabelText('Email')).toHaveValue('demo@example.test');
+  fireEvent.click(screen.getByRole('button', { name: 'Need an account? Create one' }));
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Password')).toHaveAttribute('autocomplete', 'new-password');
+});

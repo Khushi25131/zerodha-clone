@@ -17,7 +17,7 @@ const Dashboard = ({ user }) => {
       <GeneralContextProvider>
         <WatchList />
       </GeneralContextProvider>
-      <div className="content">
+      <main className="content" id="main-content" tabIndex="-1">
         <Routes>
           <Route exact path="/" element={<Summary user={user} />} />
           <Route path="/orders" element={<Orders />} />
@@ -27,7 +27,7 @@ const Dashboard = ({ user }) => {
           <Route path="/apps" element={<Apps />} />
           <Route path="*" element={<h1>404 — Page not found</h1>} />
         </Routes>
-      </div>
+      </main>
     </div>
   );
 };

@@ -21,6 +21,11 @@
     "eject": "react-scripts eject",
     "lint": "eslint src --max-warnings=0"
   },
+  "jest": {
+    "moduleNameMapper": {
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
+    }
+  },
   "eslintConfig": {
     "extends": [
       "react-app",

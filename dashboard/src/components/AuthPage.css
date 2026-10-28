@@ -1,59 +1,17 @@
-.auth-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f7f9fc;
-  padding: 24px;
-  box-sizing: border-box;
-}
-
-.auth-card {
-  width: min(440px, 100%);
-  background: #fff;
-  border: 1px solid #e7e7e7;
-  border-radius: 8px;
-  padding: 32px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-}
-
-.auth-card h1 {
-  margin-top: 0;
-  color: #313131;
-  font-weight: 400;
-}
-
-.auth-card label {
-  display: block;
-  margin: 16px 0;
-  color: #444;
-  font-size: 0.9rem;
-}
-
-.auth-card input {
-  width: 100%;
-  box-sizing: border-box;
-  margin-top: 6px;
-  min-height: 40px;
-  border: 1px solid #cfcfcf;
-  border-radius: 4px;
-  padding: 8px 10px;
-}
-
-.auth-card [role="alert"] {
-  color: #b42318;
-}
-
-.link-button,
-.logout-button {
-  border: 0;
-  background: transparent;
-  color: #4184f3;
-  cursor: pointer;
-  padding: 8px;
-}
-
-.logout-button {
-  color: #666;
-  font-size: 0.75rem;
-}
+.auth-page { min-height: 100vh; display: grid; place-items: center; padding: 40px 24px; position: relative; }
+.auth-layout { display: grid; grid-template-columns: 1fr 440px; align-items: center; gap: clamp(48px, 8vw, 120px); width: min(1080px, 100%); }
+.auth-intro { max-width: 520px; }
+.auth-intro .brand-mark { margin-bottom: 64px; }
+.auth-intro h2 { font-size: clamp(2.5rem, 5vw, 4.2rem); font-weight: 550; line-height: 1.1; letter-spacing: -.055em; }
+.auth-intro h2 span { color: var(--accent); }
+.auth-intro p { max-width: 390px; margin-top: 24px; }
+.auth-note { padding: 16px 0; margin-top: 36px; border-top: 1px solid var(--border); color: var(--muted); font-size: .75rem; }
+.auth-card { width: 100%; background: var(--glass); border: 1px solid var(--border); border-radius: 24px; padding: 36px; box-shadow: var(--shadow); }
+.auth-card h1 { font-size: 1.7rem; }
+.auth-card > p { font-size: .83rem; }
+.auth-card label { display: block; margin: 20px 0; color: var(--secondary); font-size: .8rem; font-weight: 500; }
+.auth-card input { display: block; margin-top: 8px; }
+.auth-card .btn { width: 100%; margin-top: 8px; }
+.auth-card .link-button { display: block; margin: 20px auto 0; padding: 10px 0; background: transparent; border: 0; color: var(--accent); font-size: .78rem; }
+.auth-card .link-button:hover { background: transparent; color: #d3dbff; }
+@media (max-width: 800px) { .auth-layout { grid-template-columns: 1fr; max-width: 460px; gap: 28px; } .auth-intro .brand-mark { margin-bottom: 28px; } .auth-intro h2 { font-size: 2.3rem; } .auth-intro p, .auth-note { display: none; } .auth-card { padding: 28px; } }

@@ -4,6 +4,7 @@ const Summary = ({ user }) => {
   return (
     <>
       <div className="username">
+        <span className="eyebrow">Workspace overview · Sample data</span>
         <h6>Hi, {user?.name || "User"}!</h6>
         <hr className="divider" />
       </div>

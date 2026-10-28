@@ -2,7 +2,7 @@ import React from 'react';
 
 function CreateTicket() {
     return (
-        <div className='container'>
+        <div className='container support-topics'>
             <div className='row p-5 mt-5 mb-5'>
                 <h2 className='fs-2'>To create a ticket,select a relevant topic</h2>
                 <div className='col-4 p-5 mt-2 mb-2'>

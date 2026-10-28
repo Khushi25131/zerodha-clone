@@ -17,7 +17,9 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
    <BrowserRouter>
    <aside className="demo-notice">Educational clone — not affiliated with Zerodha. No real accounts or trading. Links to official services are external.</aside>
+   <a className="skip-link" href="#main-content">Skip to content</a>
    <Navbar/>
+   <div className="site-content" id="main-content" tabIndex="-1">
    <Routes>
     <Route path='/' element={<HomePage/>}/>
     <Route path='/signup' element={<Signup/>}/>
@@ -27,6 +29,7 @@ root.render(
     <Route path='/support' element={<SupportPage/>}/>
     <Route path='*' element={<NotFound/>}/>
    </Routes>
+   </div>
    <Footer/>
    </BrowserRouter>
 );

@@ -31,7 +31,7 @@ function Stats() {
                             Explore our products
                             <i className="fa fa-long-arrow-right" aria-hidden="true"></i> 
                         </a>
-                        <a href='http://localhost:3001' style={{textDecoration:"none"}}>
+                        <a href={process.env.REACT_APP_DASHBOARD_URL || 'http://localhost:3001'} style={{textDecoration:"none"}}>
                             Try Kite demo
                             <i className="fa fa-long-arrow-right" aria-hidden="true"></i>
                         </a>

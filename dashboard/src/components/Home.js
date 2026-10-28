@@ -24,6 +24,7 @@ const Home = () => {
   if (!user) return <AuthPage onAuthenticated={setUser} />;
   return (
     <>
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="demo-notice">Educational clone — not affiliated with Zerodha. Account data is isolated after login. Watchlist, index quotes, funds and summary are sample data. No real trading or accounts.</aside>
       <TopBar user={user} onLogout={logout} />
       <Dashboard user={user} />

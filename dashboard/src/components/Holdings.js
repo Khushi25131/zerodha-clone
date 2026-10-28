@@ -26,7 +26,7 @@ const Holdings = () => {
           <div className="col"><h5>{money(totals.value)}</h5><p>Current value (this page)</p></div>
           <div className="col"><h5>{money(totals.value - totals.investment)} ({totals.investment ? ((totals.value / totals.investment - 1) * 100).toFixed(2) : "0.00"}%)</h5><p>P&L (this page)</p></div>
         </div>
-        <VerticalGraph data={{ labels: rows.map((row) => row.name), datasets: [{ label: "Stock price", data: rows.map((row) => row.price), backgroundColor: "rgba(255, 99, 132, 0.5)" }] }} />
+        <VerticalGraph data={{ labels: rows.map((row) => row.name), datasets: [{ label: "Stock price", data: rows.map((row) => row.price), backgroundColor: "#a5b4ff99", borderRadius: 6 }] }} />
       </>}
     </>}
     <Pagination collection={collection} />
