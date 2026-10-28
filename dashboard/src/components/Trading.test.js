@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { MemoryRouter } from "react-router-dom";
 import { api } from "../api";
+import AuthPage from "./AuthPage";
 import GeneralContext from "./GeneralContext";
 import BuyActionWindow from "./BuyActionWindow";
 import WatchList from "./WatchList";
@@ -16,7 +17,7 @@ beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
   HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); };
 });
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => { jest.clearAllMocks(); window.localStorage.clear(); });
 function dialog(close = jest.fn()) {
   render(<GeneralContext.Provider value={{ closeBuyWindow: close }}><BuyActionWindow uid="INFY" price={100} /></GeneralContext.Provider>);
   return close;
@@ -84,7 +85,22 @@ test("orders displays real API history", async () => {
   expect(screen.getByText("BUY")).toBeInTheDocument();
 });
 test("direct navigation selects the actual active menu", () => {
-  render(<MemoryRouter initialEntries={["/positions"]}><Menu /></MemoryRouter>);
+  render(<MemoryRouter initialEntries={["/positions"]}><Menu user={{ name: "Alice" }} onLogout={jest.fn()} /></MemoryRouter>);
   expect(screen.getByRole("link", { name: "Positions" })).toHaveClass("selected");
   expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveClass("selected");
+  expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();
+});
+
+test("auth page signs up and stores the returned session", async () => {
+  const onAuthenticated = jest.fn();
+  api.post.mockResolvedValue({ data: { token: "session-token", user: { id: "1", name: "Alice", email: "alice@example.test" } } });
+  render(<AuthPage onAuthenticated={onAuthenticated} />);
+  fireEvent.click(screen.getByRole("button", { name: "Need an account? Create one" }));
+  fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Alice" } });
+  fireEvent.change(screen.getByLabelText("Email"), { target: { value: "alice@example.test" } });
+  fireEvent.change(screen.getByLabelText("Password"), { target: { value: "12345678" } });
+  fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+  await waitFor(() => expect(onAuthenticated).toHaveBeenCalledWith({ id: "1", name: "Alice", email: "alice@example.test" }));
+  expect(api.post).toHaveBeenCalledWith("/auth/signup", { name: "Alice", email: "alice@example.test", password: "12345678" });
+  expect(window.localStorage.getItem("zerodha_demo_token")).toBe("session-token");
 });

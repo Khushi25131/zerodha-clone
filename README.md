@@ -8,7 +8,7 @@ One repository containing three independently runnable applications:
 | `dashboard/` | React demo trading dashboard | `PORT=3001 npm start` | `npm run build` -> `build/` |
 | `backend/` | Express/Mongoose API | `npm run dev` | `npm start` (no build step) |
 
-**Private demo only.** There is no authentication, account ownership or real trade execution. All records are shared. The API deliberately blocks `NODE_ENV=production`; do not disable this guard to expose it publicly.
+**Educational demo only.** The dashboard now supports basic email/password accounts and account-scoped demo data when `AUTH_REQUIRED=true`. Orders are still stored records only; there is no brokerage integration, trade execution or real money movement.
 
 ## Get started
 
@@ -44,13 +44,13 @@ The example stages only `README.md`; select the actual files you intend to commi
 
 ## Deployment
 
-Read [DEPLOYMENT.md](DEPLOYMENT.md) for verified commands, environment keys, private VM staging, health checks, backups and rollback. GitHub hosts source code, not this Node API or MongoDB. GitHub Actions verifies the API and builds both React sites; it intentionally does not deploy.
+Read [DEPLOYMENT.md](DEPLOYMENT.md) for private VM staging, health checks, backups and rollback. Read [DEPLOY_PUBLIC.md](DEPLOY_PUBLIC.md) for the public three-service deployment checklist. GitHub hosts source code, not this Node API or MongoDB. GitHub Actions verifies the API and builds both React sites; it intentionally does not deploy.
 
-- Backend: Node service and a private MongoDB database.
+- Backend: Node service and a private MongoDB database. Set `AUTH_REQUIRED=true` for public dashboard/API deployments.
 - Dashboard: static site built with `REACT_APP_API_URL` pointing to the API (or `/api` behind the supplied Nginx proxy).
 - Marketing: static site built with `REACT_APP_DASHBOARD_URL` pointing to the dashboard.
 - Private staging configuration: `deploy/nginx-staging.conf` and `deploy/zerodha-staging.service`, using loopback listeners and SSH tunnels.
 
-No production provider, paid resources, DNS or public backend deployment is configured. Public deployment requires authentication/account isolation and review of the remaining dependency advisories. Never put `MONGO_URL` or other secrets in React build variables.
+No production provider, paid resources, DNS or public backend deployment is configured. Public deployment requires an approved hosting target, `AUTH_REQUIRED=true`, exact CORS configuration, private MongoDB secrets, and review of the remaining dependency advisories. Never put `MONGO_URL` or other secrets in React build variables.
 
 See [AUDIT_REPORT.md](AUDIT_REPORT.md) and [DEBUG_VERIFICATION.md](DEBUG_VERIFICATION.md) for earlier investigation evidence and known limitations.

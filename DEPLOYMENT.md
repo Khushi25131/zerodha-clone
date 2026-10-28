@@ -2,7 +2,7 @@
 
 ## Status and architecture
 
-**Private staging only; public production is blocked.** This is an educational clone, not a brokerage. There is no registration, login, account ownership, exchange integration, cash ledger or order execution. `/newOrder` records demo orders; it does not change holdings, positions or funds. All collections are shared. CORS is not authentication. The API deliberately refuses startup with `NODE_ENV=production` until real authentication and ownership are implemented; do not work around that gate to expose it publicly.
+This is an educational clone, not a brokerage. The dashboard supports basic email/password accounts and account-scoped demo collections when `AUTH_REQUIRED=true`. `/newOrder` records demo orders; it does not change holdings, positions or funds, execute trades, or move money. CORS is not authentication. Public deployment still requires an approved hosting target, HTTPS, private MongoDB secrets, and review of the remaining dependency advisories.
 
 - `frontend/`: React 19 marketing SPA, React Router 7, Bootstrap via integrity-pinned CDN, local Font Awesome/assets.
 - `dashboard/`: React 18 SPA, React Router 6, Axios, Chart.js. Holdings, positions and orders use the API; quotes, indices, summary and funds are explicitly sample data.
@@ -60,7 +60,9 @@ Edit the backend URL privately. The existing workspace `.env` was preserved and 
 | Backend | `PORT` | TCP port; default `3002` |
 | Backend | `HOST` | Bind address; default `127.0.0.1` (keep private) |
 | Backend | `CORS_ORIGIN` | Exact comma-separated browser origins, no trailing slash; never `*` |
-| Backend | `NODE_ENV` | `development` locally; `staging` for the private configuration below; `production` is blocked |
+| Backend | `NODE_ENV` | `development` locally; `staging` for private VM testing; `production` for approved public hosting |
+| Backend | `AUTH_REQUIRED` | `true` requires account login for reads/writes; use `true` for public API/dashboard deployments |
+| Backend | `DEMO_USER_ID` | Optional fixed ObjectId for unauthenticated local/demo records when `AUTH_REQUIRED=false` |
 | Dashboard | `PORT` | Development server port (`3001` in template) |
 | Dashboard | `REACT_APP_API_URL` | Public build-time API base URL, default `http://localhost:3002`; `/api` for Nginx staging |
 | Marketing | `PORT` | Development server port (`3000` in template) |
@@ -150,6 +152,7 @@ Create the account only if it does not already exist. Create `/etc/zerodha/backe
 
 ```dotenv
 NODE_ENV=staging
+AUTH_REQUIRED=true
 HOST=127.0.0.1
 PORT=3002
 CORS_ORIGIN=http://localhost:8081
@@ -193,7 +196,7 @@ sudo systemctl enable --now zerodha-staging
 sudo systemctl restart zerodha-staging
 sudo systemctl reload nginx
 curl --fail http://127.0.0.1:3002/ready
-curl --fail http://127.0.0.1:8081/api/allOrders
+# With AUTH_REQUIRED=true, verify the dashboard signup/login flow or call API endpoints with a Bearer token.
 ```
 
 Do not expose the API using `HOST=0.0.0.0`. Nginx strips `/api/` when proxying. There is no server build step; Node executes `backend/index.js`. Service shutdown closes HTTP connections and the database, with a bounded shutdown timeout. No persistent filesystem is required for the API; MongoDB owns durable data.
@@ -210,21 +213,22 @@ Visit `http://localhost:8080` (marketing) and `http://localhost:8081` (dashboard
 
 Not authorized or ready. Before any public rollout:
 
-- Implement and review identity/session handling, account ownership and authorization on **every** collection read/write, session expiration/logout, CSRF protection where cookie authentication is used, and account-isolated regression tests.
+- Review the basic token authentication for the chosen hosting model. In-memory tokens are acceptable for one demo API instance, but a durable session/JWT rotation design is needed before horizontal scaling.
 - Add server-side idempotency for order retries and application/edge rate limits; disabling a submit button only prevents simultaneous submissions in one dialog.
 - Resolve or explicitly accept remaining dependency advisories with exposure analysis, including the dashboard React Router 6 advisories; do not run `npm audit fix --force` (it proposes replacing CRA with `react-scripts@0.0.0`). Plan a separately reviewed tooling migration.
-- Remove the fail-closed production startup gate only as part of the authenticated, tested release. Restore test data review, monitoring, secrets management and a documented backup exercise.
-- Obtain provider/domain/budget/traffic requirements. Then configure HTTPS at the ingress, exact production CORS origins, HSTS after validating TLS, secure cookies and provider-specific callbacks only for the authentication system actually chosen. There are no callbacks today.
+- Complete test data review, monitoring, secrets management and a documented backup exercise.
+- Obtain provider/domain/budget/traffic requirements. Then configure HTTPS at the ingress, exact production CORS origins and HSTS after validating TLS.
 
-The static SPAs can later use Netlify; `public/_redirects` includes history fallback. Build command `npm ci && npm run build`, base directory `frontend` or `dashboard`, publish `build`. Set the two real build-time URL values first. Do not publish a shared dashboard connected to an unauthenticated API. Existing Netlify CLI availability does **not** authorize deployment or charges.
+The static SPAs can later use Netlify; `public/_redirects` includes history fallback. Build command `npm ci && npm run build`, base directory `frontend` or `dashboard`, publish `build`. Set the two real build-time URL values first, and deploy the API with `AUTH_REQUIRED=true`. Existing Netlify CLI availability does **not** authorize deployment or charges. See `DEPLOY_PUBLIC.md` for a concise public deployment checklist.
 
 ## 7. Health, logs and diagnosis
 
 - `/health`: process liveness, not database readiness.
 - `/ready`: 200 when Mongoose is connected, otherwise 503.
 - `/allHoldings`, `/allPositions`, `/allOrders`: bounded JSON arrays.
-- `POST /newOrder`: `{ "name": "INFY", "qty": 1, "price": 100, "mode": "BUY" }`; 201 returns a stored document and its ID, not an executed trade.
-- Invalid JSON → 400; invalid fields → 400; forbidden browser origin → 403; oversized body → 413; compressed input → 415; unavailable DB → 503. Unexpected errors do not expose connection strings or payloads.
+- `POST /auth/signup`, `/auth/login`, `/auth/logout`, `GET /auth/me`: account/session endpoints.
+- `POST /newOrder`: `{ "name": "INFY", "qty": 1, "price": 100, "mode": "BUY" }`; 201 returns a stored document and its ID, not an executed trade. With `AUTH_REQUIRED=true`, the request needs an `Authorization: Bearer <token>` header.
+- Invalid JSON → 400; invalid fields → 400; unauthenticated access → 401; forbidden browser origin → 403; oversized body → 413; compressed input → 415; unavailable DB → 503. Unexpected errors do not expose connection strings or payloads.
 
 ```sh
 sudo systemctl status zerodha-staging

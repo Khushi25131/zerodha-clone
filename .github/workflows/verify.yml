@@ -7,7 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mongo:
-        image: mongo:8.0
+        # MongoDB 7 is sufficient for the API contract tests and avoids the MongoDB 8
+        # container startup incompatibility observed on GitHub-hosted runners.
+        image: mongo:7.0
         ports: ["27017:27017"]
         options: >-
           --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"

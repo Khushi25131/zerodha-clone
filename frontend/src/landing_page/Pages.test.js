@@ -12,7 +12,7 @@ test('shared open-account call to action navigates to signup', () => {
 });
 test('signup does not pretend to create a real financial account', () => {
   render(<Signup />);
-  expect(screen.getByText(/Account registration, identity verification/)).toBeInTheDocument();
+  expect(screen.getByText(/demo-only accounts to isolate sample data/)).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Open demo dashboard' })).toHaveAttribute('href', 'http://localhost:3001');
 });
 test('home signup action works and hero asset uses correct case', () => {

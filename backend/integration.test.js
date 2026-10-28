@@ -3,29 +3,30 @@ const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
 const { app, validateOrder, connectToDatabase, startServer } = require("./index");
 const { OrdersModel } = require("./model/OrdersModel");
+const { UserModel } = require("./model/UserModel");
 
 for (const body of [null, [], true, {}, { name: "X", qty: true, price: 1, mode: "BUY" }, { name: "X", qty: 1.5, price: 1, mode: "BUY" }, { name: "X", qty: 1, price: [], mode: "BUY" }, { name: "X", qty: 1, price: Infinity, mode: "BUY" }, { name: "X".repeat(65), qty: 1, price: 1, mode: "BUY" }, { name: "X", qty: 1000001, price: 1, mode: "BUY" }]) {
   test(`invalid payload: ${JSON.stringify(body)}`, () => assert.equal(validateOrder(body).valid, false));
 }
 test("normalizes numeric strings and SELL mode", () => assert.deepEqual(validateOrder({ name: " INFY ", qty: "2", price: "1.25", mode: " sell " }).data, { name: "INFY", qty: 2, price: 1.25, mode: "SELL" }));
-test("order schema enforces validation and stores declared fields", async () => {
-  const bad = new OrdersModel({ name: "X", qty: 1.5, price: 0, mode: "HOLD" });
+test("order schema enforces validation, declared fields, and ownership", async () => {
+  const ownerId = new mongoose.Types.ObjectId();
+  const bad = new OrdersModel({ userId: ownerId, name: "X", qty: 1.5, price: 0, mode: "HOLD" });
   await assert.rejects(bad.validate(), { name: "ValidationError" });
-  const good = new OrdersModel({ name: "INFY", qty: 2, price: 10, mode: "BUY" });
+  const missingOwner = new OrdersModel({ name: "INFY", qty: 2, price: 10, mode: "BUY" });
+  await assert.rejects(missingOwner.validate(), { name: "ValidationError" });
+  const good = new OrdersModel({ userId: ownerId, name: "INFY", qty: 2, price: 10, mode: "BUY" });
   await good.validate();
   assert.equal(good.name, "INFY");
+  assert.equal(String(good.userId), String(ownerId));
 });
-test("startup requires a database URL and rejects public production", async () => {
+test("startup requires a database URL", async () => {
   const saved = process.env.MONGO_URL;
-  const env = process.env.NODE_ENV;
   try {
     delete process.env.MONGO_URL;
     await assert.rejects(connectToDatabase(), /MONGO_URL/);
-    process.env.NODE_ENV = "production";
-    await assert.rejects(startServer(), /authentication/);
   } finally {
     if (saved === undefined) delete process.env.MONGO_URL; else process.env.MONGO_URL = saved;
-    if (env === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = env;
   }
 });
 
@@ -86,4 +87,39 @@ test("real MongoDB API integration (isolated database only)", { skip: !process.e
   await mongoose.disconnect();
   await mongoose.connect(process.env.TEST_MONGO_URL);
   assert.equal(await OrdersModel.countDocuments(), 6, "records survive reconnect");
+
+  await OrdersModel.deleteMany({});
+  await UserModel.deleteMany({});
+  const savedAuth = process.env.AUTH_REQUIRED;
+  process.env.AUTH_REQUIRED = "true";
+  try {
+    assert.equal((await fetch(`${base}/allOrders`)).status, 401, "authenticated mode rejects anonymous reads");
+    assert.equal((await post(payload)).status, 401, "authenticated mode rejects anonymous writes");
+    const signup = (name, email) => fetch(`${base}/auth/signup`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, password: "correct horse battery staple" }) });
+    const aliceResponse = await signup("Alice", "alice@example.test");
+    assert.equal(aliceResponse.status, 201);
+    const alice = await aliceResponse.json();
+    assert.ok(alice.token);
+    assert.equal(alice.user.email, "alice@example.test");
+    assert.equal((await signup("Alice Clone", "alice@example.test")).status, 409);
+    const badLogin = await fetch(`${base}/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "alice@example.test", password: "wrong password" }) });
+    assert.equal(badLogin.status, 401);
+    const bobResponse = await signup("Bob", "bob@example.test");
+    assert.equal(bobResponse.status, 201);
+    const bob = await bobResponse.json();
+    const authedPost = (token, body) => fetch(`${base}/newOrder`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+    assert.equal((await authedPost(alice.token, { ...payload, name: "ALICE" })).status, 201);
+    assert.equal((await authedPost(bob.token, { ...payload, name: "BOB" })).status, 201);
+    const authedGet = (token, path) => fetch(`${base}/${path}`, { headers: { Authorization: `Bearer ${token}` } });
+    const aliceOrders = await (await authedGet(alice.token, "allOrders")).json();
+    const bobOrders = await (await authedGet(bob.token, "allOrders")).json();
+    assert.deepEqual(aliceOrders.map((order) => order.name), ["ALICE"]);
+    assert.deepEqual(bobOrders.map((order) => order.name), ["BOB"]);
+    assert.notEqual(aliceOrders[0].userId, bobOrders[0].userId);
+    assert.equal(await OrdersModel.countDocuments(), 2);
+    assert.equal((await fetch(`${base}/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${alice.token}` } })).status, 200);
+    assert.equal((await authedGet(alice.token, "auth/me")).status, 401);
+  } finally {
+    if (savedAuth === undefined) delete process.env.AUTH_REQUIRED; else process.env.AUTH_REQUIRED = savedAuth;
+  }
 });

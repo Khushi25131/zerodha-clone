@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { validateOrder } = require("./index");
+const { validateOrder, validateSignup, validateLogin, hashPassword, verifyPassword } = require("./index");
 
 test("accepts a valid BUY order", () => {
   const result = validateOrder({ name: "INFY", qty: 2, price: 1520.25, mode: "BUY" });
@@ -32,4 +32,21 @@ test("rejects invalid order mode", () => {
 
   assert.equal(result.valid, false);
   assert.match(result.error, /BUY\/SELL/i);
+});
+
+test("validates signup and login payloads", () => {
+  assert.equal(validateSignup({ name: "Alice", email: "alice@example.test", password: "12345678" }).valid, true);
+  assert.equal(validateSignup({ name: "Alice", email: "not-email", password: "12345678" }).valid, false);
+  assert.equal(validateSignup({ name: "Alice", email: "alice@example.test", password: "short" }).valid, false);
+  assert.equal(validateLogin({ email: "alice@example.test", password: "12345678" }).valid, true);
+  assert.equal(validateLogin({ email: "bad", password: "12345678" }).valid, false);
+});
+
+test("hashes and verifies passwords without storing plaintext", () => {
+  const first = hashPassword("correct horse battery staple");
+  const second = hashPassword("correct horse battery staple");
+  assert.notEqual(first.salt, second.salt);
+  assert.notEqual(first.hash, "correct horse battery staple");
+  assert.equal(verifyPassword("correct horse battery staple", first.salt, first.hash), true);
+  assert.equal(verifyPassword("wrong password", first.salt, first.hash), false);
 });
