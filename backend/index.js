@@ -224,8 +224,31 @@ const startServer = async () => {
   process.once("SIGINT", shutdown);
   return server;
 };
-if (require.main === module) startServer().catch(() => {
-  console.error("Startup failed: verify NODE_ENV, PORT, MONGO_URL, AUTH_REQUIRED and database availability.");
+// Never log raw driver errors: their messages may contain connection credentials.
+const startupFailureMessage = (error) => {
+  if (error?.message === "Invalid PORT.") return "Startup failed [PORT]: use a numeric port from 1 to 65535; set HOST=0.0.0.0 separately on Render.";
+  if (error?.message === "MONGO_URL is required.") return "Startup failed [MONGO_URL]: configure the database connection string in the backend environment.";
+  const candidates = [error, error?.cause, error?.reason];
+  const servers = error?.reason?.servers;
+  if (servers instanceof Map) {
+    for (const server of servers.values()) candidates.push(server?.error, server?.error?.cause);
+  }
+  if (candidates.some((item) => item?.code === 18 || item?.codeName === "AuthenticationFailed")) {
+    return "Startup failed [DATABASE_AUTH]: check the Atlas database username, current password and URL encoding in MONGO_URL.";
+  }
+  if (candidates.some((item) => ["ENOTFOUND", "ENODATA", "ESERVFAIL", "EAI_AGAIN"].includes(item?.code))) {
+    return "Startup failed [DATABASE_DNS]: verify the Atlas cluster hostname and that the cluster is active.";
+  }
+  if (error?.name === "MongoParseError" || error?.name === "MongoInvalidArgumentError") {
+    return "Startup failed [DATABASE_URI]: check MONGO_URL syntax, placeholders and URL-encoded credentials.";
+  }
+  if (error?.name === "MongooseServerSelectionError" || error?.name === "MongoServerSelectionError") {
+    return "Startup failed [DATABASE_UNREACHABLE]: check Atlas Network Access for Render outbound IP ranges, cluster availability and database credentials.";
+  }
+  return "Startup failed [UNKNOWN]: configuration or database initialization failed; inspect backend configuration privately. No credentials were logged.";
+};
+if (require.main === module) startServer().catch((error) => {
+  console.error(startupFailureMessage(error));
   process.exitCode = 1;
 });
-module.exports = { app, connectToDatabase, startServer, validateOrder, validateSignup, validateLogin, hashPassword, verifyPassword, sessions };
+module.exports = { app, connectToDatabase, startServer, validateOrder, validateSignup, validateLogin, hashPassword, verifyPassword, sessions, startupFailureMessage };

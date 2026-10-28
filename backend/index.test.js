@@ -1,7 +1,28 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { validateOrder, validateSignup, validateLogin, hashPassword, verifyPassword } = require("./index");
+const { validateOrder, validateSignup, validateLogin, hashPassword, verifyPassword, startupFailureMessage } = require("./index");
+
+test("startup diagnostics identify configuration failures without exposing credentials", () => {
+  const secret = "mongodb+srv://private-user:private-password@example.invalid/demo";
+  const cases = [
+    [new Error("Invalid PORT."), "PORT"],
+    [new Error("MONGO_URL is required."), "MONGO_URL"],
+    [{ name: "MongoParseError", message: secret }, "DATABASE_URI"],
+    [{ cause: { code: 18, message: secret } }, "DATABASE_AUTH"],
+    [{ cause: { code: "ENOTFOUND", message: secret } }, "DATABASE_DNS"],
+    [{ name: "MongooseServerSelectionError", message: secret }, "DATABASE_UNREACHABLE"],
+    [{ reason: { servers: new Map([["host", { error: { code: 18, message: secret } }]]) } }, "DATABASE_AUTH"],
+    [new Error(secret), "UNKNOWN"],
+    [null, "UNKNOWN"],
+  ];
+  for (const [error, category] of cases) {
+    const message = startupFailureMessage(error);
+    assert.ok(message.includes(`[${category}]`));
+    assert.ok(!message.includes(secret));
+    assert.ok(!message.includes("private-password"));
+  }
+});
 
 test("accepts a valid BUY order", () => {
   const result = validateOrder({ name: "INFY", qty: 2, price: 1520.25, mode: "BUY" });
