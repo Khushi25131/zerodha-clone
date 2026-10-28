@@ -4,7 +4,9 @@ permissions:
   contents: read
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    # MongoDB 8.0 rejects Linux kernels >=6.19 (SERVER-121912).
+    # Keep this job on Ubuntu 24.04 rather than the moving ubuntu-latest image.
+    runs-on: ubuntu-24.04
     services:
       mongo:
         image: mongo:8.0
