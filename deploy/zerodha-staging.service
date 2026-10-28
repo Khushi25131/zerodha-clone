@@ -1,0 +1,23 @@
+[Unit]
+Description=Zerodha educational demo API (private staging only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zerodha
+Group=zerodha
+WorkingDirectory=/opt/zerodha/current/backend
+EnvironmentFile=/etc/zerodha/backend.env
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

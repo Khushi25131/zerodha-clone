@@ -1,0 +1,59 @@
+name: Verify
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:8.0
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+        env:
+          TEST_MONGO_URL: mongodb://127.0.0.1:27017/zerodha_audit_test
+      - run: npm audit --omit=dev --audit-level=moderate
+  static-apps:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [dashboard, frontend]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --watchAll=false --runInBand
+        env:
+          CI: "true"
+      - run: npm run build
+        env:
+          CI: "true"
+          GENERATE_SOURCEMAP: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-static
+          path: ${{ matrix.app }}/build
+  # Intentionally no deploy job: private staging target and credentials need approval.
