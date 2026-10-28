@@ -75,4 +75,17 @@ footer .mt-5.text-muted { font-size: .72rem !important; border-top: 1px solid va
 @supports (backdrop-filter: blur(16px)) { .navbar { background: #101827d9; backdrop-filter: blur(16px) saturate(125%); -webkit-backdrop-filter: blur(16px) saturate(125%); } }
 @media (max-width: 991px) { .nav-link { margin: 4px 0; } .navbar > .container { padding: 16px !important; } .navbar-collapse { width: 100%; } }
 @media (max-width: 767px) { .row > [class*="col-"], .support-topics .row > .col-4 { width: 100%; flex-basis: 100%; } .row .p-5 { padding: 1.25rem !important; } .site-content > .container { margin-top: 32px; margin-bottom: 32px; } .site-content .row { row-gap: 20px; } .site-content .mx-5 { margin-left: 0 !important; margin-right: 0 !important; } #supportWrapper { padding: 24px !important; flex-wrap: wrap; } #supportHero .mx-5 { margin: 0 !important; } .btn { min-width: 160px; max-width: 100%; } .hero-premium { padding: 40px 20px 20px; } .hero-preview { margin-top: 32px; padding: 8px; border-radius: 16px; } footer .col { flex: 1 0 45%; } footer .container { padding: 0 24px; } }
+.workspace-features { padding-top: 48px; padding-bottom: 48px; }
+.section-intro { max-width: 650px; margin-bottom: 28px; }
+.section-intro h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); }
+.feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.workspace-feature { border: 1px solid var(--border); background: #ffffff04; padding: 28px; border-radius: 18px; transition: border-color .2s, transform .2s; }
+.workspace-feature:hover { border-color: #a5b4ff55; transform: translateY(-2px); }
+.workspace-feature h3 { font-size: 1.15rem; margin: 20px 0 12px; }
+.workspace-feature p { margin: 0; }
+.feature-icon { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; color: #a5b4ff; background: #8b9cff15; }
+.workspace-links, .hero-capabilities { display: flex; flex-wrap: wrap; gap: 16px 28px; margin-top: 24px; }
+.hero-capabilities { justify-content: center; color: #abb5c8; font-size: .78rem; }
+.hero-capabilities span { padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; }
+@media (max-width: 767px) { .feature-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

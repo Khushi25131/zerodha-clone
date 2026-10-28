@@ -1,0 +1,46 @@
+import React from 'react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { MemoryRouter } from 'react-router-dom';
+import { api } from '../api';
+import Holdings from './Holdings';
+import Orders from './Orders';
+import Summary from './Summary';
+jest.mock('../api', () => ({ api: { get: jest.fn() }, apiError: () => 'API unavailable' }));
+jest.mock('./AnalyticsCharts', () => ({ AllocationChart: () => <div>Allocation chart</div>, ExposureChart: ({ metric }) => <div>Exposure: {metric}</div>, ActivityChart: () => <div>Activity chart</div> }));
+beforeEach(() => jest.clearAllMocks());
+test('holdings search, sorting, chart metric and reset work together', async () => {
+  api.get.mockResolvedValue({ data: [{ _id: '1', name: 'BETA', qty: 2, avg: 10, price: 12 }, { _id: '2', name: 'ALPHA', qty: 1, avg: 10, price: 8 }] });
+  render(<Holdings />);
+  await screen.findByText('ALPHA');
+  fireEvent.change(screen.getByRole('combobox', { name: 'Sort by' }), { target: { value: 'name' } });
+  expect(screen.getAllByRole('row')[1]).toHaveTextContent('ALPHA');
+  fireEvent.change(screen.getByLabelText('Chart metric'), { target: { value: 'profit' } });
+  expect(screen.getByText('Exposure: profit')).toBeInTheDocument();
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'missing' } });
+  expect(screen.getByText('No matching holdings')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Reset filters' }));
+  expect(screen.getByText('ALPHA')).toBeInTheDocument();
+  expect(screen.getByText('Exposure: value')).toBeInTheDocument();
+});
+test('orders side/date/search controls filter real loaded rows and reset', async () => {
+  api.get.mockResolvedValue({ data: [{ _id: '1', name: 'INFY', qty: 1, price: 100, mode: 'BUY', createdAt: new Date().toISOString() }, { _id: '2', name: 'TCS', qty: 2, price: 50, mode: 'SELL', createdAt: '2020-01-01T00:00:00Z' }] });
+  render(<MemoryRouter><Orders /></MemoryRouter>);
+  await screen.findByText('INFY');
+  fireEvent.change(screen.getByLabelText('Order side'), { target: { value: 'SELL' } });
+  expect(screen.queryByText('INFY')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Order time range'), { target: { value: '7' } });
+  expect(screen.getByText('No matching orders')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Reset filters' }));
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'infy' } });
+  expect(screen.getByText('INFY')).toBeInTheDocument();
+  expect(screen.queryByText('TCS')).not.toBeInTheDocument();
+});
+test('overview derives values from holdings and displays saved account activity', async () => {
+  api.get.mockImplementation((path) => Promise.resolve({ data: path === '/allHoldings' ? [{ _id: '1', name: 'INFY', qty: 2, avg: 10, price: 12 }] : [{ _id: '2', name: 'RECENT', qty: 1, price: 100, mode: 'BUY' }] }));
+  render(<MemoryRouter><Summary user={{ name: 'Alice' }} /></MemoryRouter>);
+  expect(await screen.findByText('RECENT')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Hi, Alice!' })).toBeInTheDocument();
+  expect(screen.getByText('20.00% return on invested capital')).toBeInTheDocument();
+  expect(screen.getByText(/Snapshot scope: latest 100/)).toBeInTheDocument();
+});

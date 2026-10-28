@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import GeneralContext from "./GeneralContext";
 import { watchlist } from "../data/data";
-import { DoughnutChart } from "./DoughnoutChart";
+
 const WatchList = () => {
   const [search, setSearch] = useState("");
   const { openBuyWindow } = useContext(GeneralContext);
@@ -15,7 +15,7 @@ const WatchList = () => {
       <div className="item"><p className={stock.isDown ? "down" : "up"}>{stock.name}</p><div className="item-info"><span>{stock.percent}</span><span>{stock.price}</span></div></div>
       <div className="trade-actions"><button className="buy" aria-label={`Buy ${stock.name}`} onClick={() => openBuyWindow(stock.name, stock.price, "BUY")}>Buy</button> <button className="sell" aria-label={`Sell ${stock.name}`} onClick={() => openBuyWindow(stock.name, stock.price, "SELL")}>Sell</button></div>
     </li>)}</ul>
-    <div className="chart-panel"><h3>Sample price comparison</h3><DoughnutChart data={{ labels: stocks.map((stock) => stock.name), datasets: [{ label: "Sample price", data: stocks.map((stock) => stock.price), backgroundColor: ["#a5b4ff", "#65d6e8", "#c2a3ed", "#48d6a0", "#f5bd67"], borderColor: "#111827", borderWidth: 3 }] }} /></div>
+    <p className="watchlist-help">Select Buy or Sell to record a demo order. Explore your account’s stored exposure in Holdings.</p>
   </section>;
 };
 export default WatchList;

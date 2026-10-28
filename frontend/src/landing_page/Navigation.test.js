@@ -21,7 +21,7 @@ test('home demo link respects the deployed dashboard URL', () => {
   process.env.REACT_APP_DASHBOARD_URL = 'https://dashboard.example.test';
   try {
     render(<Stats />);
-    expect(screen.getByRole('link', { name: /Try Kite demo/ })).toHaveAttribute('href', 'https://dashboard.example.test');
+    expect(screen.getByRole('link', { name: /Open demo workspace/ })).toHaveAttribute('href', 'https://dashboard.example.test');
   } finally {
     if (saved === undefined) delete process.env.REACT_APP_DASHBOARD_URL;
     else process.env.REACT_APP_DASHBOARD_URL = saved;

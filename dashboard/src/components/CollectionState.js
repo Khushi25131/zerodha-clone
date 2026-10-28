@@ -1,6 +1,6 @@
 import React from "react";
 export function CollectionState({ collection }) {
-  if (collection.loading) return <p role="status">Loading…</p>;
+  if (collection.loading) return <div role="status" aria-live="polite" className="collection-loading"><span className="loading-dot" aria-hidden="true" /> Loading account data…</div>;
   if (collection.error) return <div role="alert">{collection.error} <button onClick={collection.retry}>Retry</button></div>;
   return null;
 }

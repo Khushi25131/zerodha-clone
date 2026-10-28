@@ -11,6 +11,7 @@ import Holdings, { holdingTotals } from "./Holdings";
 import Orders from "./Orders";
 import Menu from "./Menu";
 jest.mock("../api", () => ({ api: { get: jest.fn(), post: jest.fn() }, apiError: () => "API unavailable" }));
+jest.mock("./AnalyticsCharts", () => ({ AllocationChart: () => <div>Allocation chart</div>, ExposureChart: ({ metric }) => <div>Exposure chart: {metric}</div>, ActivityChart: () => <div>Activity chart</div> }));
 jest.mock("./VerticalGraph", () => ({ VerticalGraph: () => null }));
 jest.mock("./DoughnoutChart", () => ({ DoughnutChart: () => null }));
 beforeAll(() => {
